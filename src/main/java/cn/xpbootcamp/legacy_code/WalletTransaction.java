@@ -4,9 +4,8 @@ import cn.xpbootcamp.legacy_code.enums.STATUS;
 import cn.xpbootcamp.legacy_code.repository.UserRepositoryImpl;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.service.WalletServiceImpl;
+import cn.xpbootcamp.legacy_code.utils.DistributedLock;
 import cn.xpbootcamp.legacy_code.utils.IdGenerator;
-import cn.xpbootcamp.legacy_code.utils.RedisDistributedLock;
-
 import javax.transaction.InvalidTransactionException;
 
 public class WalletTransaction {
@@ -16,12 +15,13 @@ public class WalletTransaction {
     private Long productId;
     private String orderId;
     private Long createdTimestamp;
-    private Double amount;
+    private double amount;
     private STATUS status;
     private String walletTransactionId;
+    private DistributedLock distributedLock;
 
-
-    public WalletTransaction(String preAssignedId, Long buyerId, Long sellerId, Long productId, String orderId) {
+    public WalletTransaction(String preAssignedId, Long buyerId,
+                             Long sellerId, Long productId, String orderId, DistributedLock distributedLock) {
         if (preAssignedId != null && !preAssignedId.isEmpty()) {
             this.id = preAssignedId;
         } else {
@@ -36,6 +36,7 @@ public class WalletTransaction {
         this.orderId = orderId;
         this.status = STATUS.TO_BE_EXECUTED;
         this.createdTimestamp = System.currentTimeMillis();
+        this.distributedLock = distributedLock;
     }
 
     public boolean execute() throws InvalidTransactionException {
@@ -45,7 +46,7 @@ public class WalletTransaction {
         if (status == STATUS.EXECUTED) return true;
         boolean isLocked = false;
         try {
-            isLocked = RedisDistributedLock.getSingletonInstance().lock(id);
+            isLocked = distributedLock.lock(id);
 
             // 锁定未成功，返回false
             if (!isLocked) {
@@ -70,7 +71,7 @@ public class WalletTransaction {
             }
         } finally {
             if (isLocked) {
-                RedisDistributedLock.getSingletonInstance().unlock(id);
+                distributedLock.unlock(id);
             }
         }
     }

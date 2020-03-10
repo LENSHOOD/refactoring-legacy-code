@@ -1,6 +1,6 @@
 package cn.xpbootcamp.legacy_code.utils;
 
-public class RedisDistributedLock {
+public class RedisDistributedLock implements DistributedLock {
     private static final RedisDistributedLock INSTANCE = new RedisDistributedLock();
 
     public static RedisDistributedLock getSingletonInstance() {
