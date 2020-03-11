@@ -43,7 +43,9 @@ public class WalletTransaction {
         if (buyerId == null || (sellerId == null || amount < 0.0)) {
             throw new InvalidTransactionException("This is an invalid transaction");
         }
-        if (status == STATUS.EXECUTED) return true;
+        if (status == STATUS.EXECUTED) {
+            return true;
+        }
         boolean isLocked = false;
         try {
             isLocked = distributedLock.lock(id);
@@ -52,7 +54,9 @@ public class WalletTransaction {
             if (!isLocked) {
                 return false;
             }
-            if (status == STATUS.EXECUTED) return true; // double check
+            if (status == STATUS.EXECUTED) {
+                return true; // double check
+            }
             long executionInvokedTimestamp = System.currentTimeMillis();
             // 交易超过20天
             if (executionInvokedTimestamp - createdTimestamp > 1728000000) {
@@ -60,9 +64,9 @@ public class WalletTransaction {
                 return false;
             }
             WalletService walletService = new WalletServiceImpl(new UserRepositoryImpl());
-            String walletTransactionId = walletService.moveMoney(id, buyerId, sellerId, amount);
-            if (walletTransactionId != null) {
-                this.walletTransactionId = walletTransactionId;
+            String transactionId = walletService.moveMoney(id, buyerId, sellerId, amount);
+            if (transactionId != null) {
+                this.walletTransactionId = transactionId;
                 this.status = STATUS.EXECUTED;
                 return true;
             } else {
