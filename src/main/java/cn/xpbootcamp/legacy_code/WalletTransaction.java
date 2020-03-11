@@ -4,36 +4,34 @@ import cn.xpbootcamp.legacy_code.enums.STATUS;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
 import cn.xpbootcamp.legacy_code.utils.IdGenerator;
+import cn.xpbootcamp.legacy_code.vo.TransactionInfo;
 import javax.transaction.InvalidTransactionException;
 import java.util.Optional;
 
 public class WalletTransaction {
+    private TransactionInfo transactionInfo;
+
     private String transactionId;
-    private Long buyerId;
-    private Long sellerId;
     private Long createdTimestamp;
-    private double amount;
     private STATUS status;
     private String transactionSerialNumber;
+
     private DistributedLock distributedLock;
     private WalletService walletService;
 
-    public WalletTransaction(Long buyerId, Long sellerId,
-                             double amount, DistributedLock distributedLock, WalletService walletService) {
+    public WalletTransaction(TransactionInfo transactionInfo, DistributedLock distributedLock, WalletService walletService) throws InvalidTransactionException {
+        if (transactionInfo == null) {
+            throw new InvalidTransactionException("This is an invalid transaction");
+        }
+        this.transactionInfo = transactionInfo;
         this.transactionId = IdGenerator.generateTransactionId();
-        this.buyerId = buyerId;
-        this.sellerId = sellerId;
-        this.amount = amount;
         this.status = STATUS.TO_BE_EXECUTED;
         this.createdTimestamp = System.currentTimeMillis();
         this.distributedLock = distributedLock;
         this.walletService = walletService;
     }
 
-    public boolean execute() throws InvalidTransactionException {
-        if (buyerId == null || (sellerId == null || amount < 0.0)) {
-            throw new InvalidTransactionException("This is an invalid transaction");
-        }
+    public boolean execute() {
         if (status == STATUS.EXECUTED) {
             return true;
         }
@@ -55,7 +53,8 @@ public class WalletTransaction {
                 return false;
             }
 
-            Optional<String> serialNumber = walletService.moveMoney(buyerId, sellerId, amount);
+            Optional<String> serialNumber = walletService.moveMoney(
+                    transactionInfo.getBuyerId(), transactionInfo.getSellerId(), transactionInfo.getAmount());
             if (serialNumber.isPresent()) {
                 this.transactionSerialNumber = serialNumber.get();
                 this.status = STATUS.EXECUTED;
