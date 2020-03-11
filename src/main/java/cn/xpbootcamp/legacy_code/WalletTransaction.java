@@ -7,26 +7,27 @@ import cn.xpbootcamp.legacy_code.service.WalletServiceImpl;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
 import cn.xpbootcamp.legacy_code.utils.IdGenerator;
 import javax.transaction.InvalidTransactionException;
+import java.util.Optional;
 
 public class WalletTransaction {
-    private String id;
+    private String transactionId;
     private Long buyerId;
     private Long sellerId;
     private Long createdTimestamp;
     private double amount;
     private STATUS status;
-    private String walletTransactionId;
+    private String transactionSerialNumber;
     private DistributedLock distributedLock;
 
     public WalletTransaction(String preAssignedId, Long buyerId, Long sellerId,
                              double amount, DistributedLock distributedLock) {
         if (preAssignedId != null && !preAssignedId.isEmpty()) {
-            this.id = preAssignedId;
+            this.transactionId = preAssignedId;
         } else {
-            this.id = IdGenerator.generateTransactionId();
+            this.transactionId = IdGenerator.generateTransactionId();
         }
-        if (!this.id.startsWith("t_")) {
-            this.id = "t_" + preAssignedId;
+        if (!this.transactionId.startsWith("t_")) {
+            this.transactionId = "t_" + preAssignedId;
         }
         this.buyerId = buyerId;
         this.sellerId = sellerId;
@@ -45,7 +46,7 @@ public class WalletTransaction {
         }
         boolean isLocked = false;
         try {
-            isLocked = distributedLock.lock(id);
+            isLocked = distributedLock.lock(transactionId);
 
             // 锁定未成功，返回false
             if (!isLocked) {
@@ -61,9 +62,9 @@ public class WalletTransaction {
                 return false;
             }
             WalletService walletService = new WalletServiceImpl(new UserRepositoryImpl());
-            String transactionId = walletService.moveMoney(id, buyerId, sellerId, amount);
-            if (transactionId != null) {
-                this.walletTransactionId = transactionId;
+            Optional<String> serialNumber = walletService.moveMoney(buyerId, sellerId, amount);
+            if (serialNumber.isPresent()) {
+                this.transactionSerialNumber = serialNumber.get();
                 this.status = STATUS.EXECUTED;
                 return true;
             } else {
@@ -72,12 +73,12 @@ public class WalletTransaction {
             }
         } finally {
             if (isLocked) {
-                distributedLock.unlock(id);
+                distributedLock.unlock(transactionId);
             }
         }
     }
 
-    public String getWalletTransactionId() {
-        return walletTransactionId;
+    public String getTransactionSerialNumber() {
+        return transactionSerialNumber;
     }
 }

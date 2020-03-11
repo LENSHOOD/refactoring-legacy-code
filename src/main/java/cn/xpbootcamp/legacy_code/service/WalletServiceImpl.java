@@ -2,7 +2,8 @@ package cn.xpbootcamp.legacy_code.service;
 
 import cn.xpbootcamp.legacy_code.entity.User;
 import cn.xpbootcamp.legacy_code.repository.UserRepository;
-import java.util.UUID;
+import cn.xpbootcamp.legacy_code.utils.IdGenerator;
+import java.util.Optional;
 
 public class WalletServiceImpl implements WalletService {
     private UserRepository userRepository;
@@ -12,15 +13,15 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public String moveMoney(String id, long buyerId, long sellerId, double amount) {
+    public Optional<String> moveMoney(long buyerId, long sellerId, double amount) {
         User buyer = userRepository.find(buyerId);
         if (buyer.getBalance() < amount) {
-            return null;
+            return Optional.empty();
         }
 
         User seller = userRepository.find(sellerId);
         seller.setBalance(seller.getBalance() + amount);
         buyer.setBalance(buyer.getBalance() - amount);
-        return UUID.randomUUID().toString() + id;
+        return Optional.of(IdGenerator.generateTransactionId());
     }
 }
