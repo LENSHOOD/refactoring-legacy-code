@@ -3,8 +3,7 @@ package cn.xpbootcamp.legacy_code;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
@@ -47,4 +46,72 @@ class WalletTransactionTest {
         // then
         assertThat(result).isFalse();
     }
+
+    @Test
+    void should_get_double_lock() {
+        // given
+        when(lock.lock(String.valueOf(buyerId))).thenReturn(true);
+        when(lock.lock(String.valueOf(sellerId))).thenReturn(true);
+
+        // when
+        boolean isGetLock = walletTransaction.tryLock();
+
+        // then
+        assertThat(isGetLock).isTrue();
+    }
+
+    @Test
+    void should_return_false_when_get_buyer_lock_fail() {
+        // given
+        when(lock.lock(String.valueOf(buyerId))).thenReturn(false);
+
+        // when
+        boolean isGetLock = walletTransaction.tryLock();
+
+        // then
+        assertThat(isGetLock).isFalse();
+    }
+
+    @Test
+    void should_return_false_when_get_seller_lock_fail() {
+        // given
+        when(lock.lock(String.valueOf(buyerId))).thenReturn(true);
+        when(lock.lock(String.valueOf(sellerId))).thenReturn(false);
+        doNothing().when(lock).unlock(String.valueOf(buyerId));
+
+        // when
+        boolean isGetLock = walletTransaction.tryLock();
+
+        // then
+        assertThat(isGetLock).isFalse();
+        verify(lock, times(1)).unlock(String.valueOf(buyerId));
+    }
+
+    @Test
+    void should_unlock() {
+        // given
+        doNothing().when(lock).unlock(String.valueOf(buyerId));
+        doNothing().when(lock).unlock(String.valueOf(sellerId));
+
+        // when
+        walletTransaction.unlock(true);
+
+        // then
+        verify(lock, times(1)).unlock(String.valueOf(buyerId));
+        verify(lock, times(1)).unlock(String.valueOf(sellerId));
+    }
+
+    @Test
+    void should_unlock_buyer_when_unlock_seller_fail() {
+        // given
+        doThrow(RuntimeException.class).when(lock).unlock(String.valueOf(sellerId));
+        doNothing().when(lock).unlock(String.valueOf(buyerId));
+
+        // when
+        assertThatThrownBy(() -> walletTransaction.unlock(true)).isInstanceOf(RuntimeException.class);
+
+        // then
+        verify(lock, times(1)).unlock(String.valueOf(buyerId));
+    }
+
 }

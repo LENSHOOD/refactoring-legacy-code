@@ -3,7 +3,6 @@ package cn.xpbootcamp.legacy_code;
 import cn.xpbootcamp.legacy_code.enums.STATUS;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
-import cn.xpbootcamp.legacy_code.utils.IdGenerator;
 import cn.xpbootcamp.legacy_code.vo.TransactionInfo;
 import javax.transaction.InvalidTransactionException;
 import java.util.Optional;
@@ -11,7 +10,6 @@ import java.util.Optional;
 public class WalletTransaction {
     private TransactionInfo transactionInfo;
 
-    private String transactionId;
     private Long createdTimestamp;
     private STATUS status;
     private String transactionSerialNumber;
@@ -19,12 +17,12 @@ public class WalletTransaction {
     private DistributedLock distributedLock;
     private WalletService walletService;
 
-    public WalletTransaction(TransactionInfo transactionInfo, DistributedLock distributedLock, WalletService walletService) throws InvalidTransactionException {
+    public WalletTransaction(TransactionInfo transactionInfo, DistributedLock distributedLock, WalletService walletService)
+            throws InvalidTransactionException {
         if (transactionInfo == null) {
             throw new InvalidTransactionException("This is an invalid transaction");
         }
         this.transactionInfo = transactionInfo;
-        this.transactionId = IdGenerator.generateTransactionId();
         this.status = STATUS.TO_BE_EXECUTED;
         this.createdTimestamp = System.currentTimeMillis();
         this.distributedLock = distributedLock;
@@ -35,10 +33,8 @@ public class WalletTransaction {
         if (status == STATUS.EXECUTED) {
             return true;
         }
-        boolean isLocked = false;
+        boolean isLocked = tryLock();
         try {
-            isLocked = distributedLock.lock(transactionId);
-
             // 锁定未成功，返回false
             if (!isLocked) {
                 return false;
@@ -64,9 +60,35 @@ public class WalletTransaction {
                 return false;
             }
         } finally {
-            if (isLocked) {
-                distributedLock.unlock(transactionId);
+            unlock(isLocked);
+        }
+    }
+
+    boolean tryLock() {
+        if (!distributedLock.lock(String.valueOf(transactionInfo.getBuyerId()))) {
+            return false;
+        }
+
+        boolean acquired = false;
+        try {
+            acquired = distributedLock.lock(String.valueOf(transactionInfo.getSellerId()));
+            return acquired;
+        } finally {
+            if (!acquired) {
+                distributedLock.unlock(String.valueOf(transactionInfo.getBuyerId()));
             }
+        }
+    }
+
+    void unlock(boolean isLocked) {
+        if (!isLocked) {
+            return;
+        }
+
+        try {
+            distributedLock.unlock(String.valueOf(transactionInfo.getSellerId()));
+        } finally {
+            distributedLock.unlock(String.valueOf(transactionInfo.getBuyerId()));
         }
     }
 
