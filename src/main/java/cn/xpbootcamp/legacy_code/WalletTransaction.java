@@ -19,16 +19,9 @@ public class WalletTransaction {
     private String transactionSerialNumber;
     private DistributedLock distributedLock;
 
-    public WalletTransaction(String preAssignedId, Long buyerId, Long sellerId,
+    public WalletTransaction(Long buyerId, Long sellerId,
                              double amount, DistributedLock distributedLock) {
-        if (preAssignedId != null && !preAssignedId.isEmpty()) {
-            this.transactionId = preAssignedId;
-        } else {
-            this.transactionId = IdGenerator.generateTransactionId();
-        }
-        if (!this.transactionId.startsWith("t_")) {
-            this.transactionId = "t_" + preAssignedId;
-        }
+        this.transactionId = IdGenerator.generateTransactionId();
         this.buyerId = buyerId;
         this.sellerId = sellerId;
         this.amount = amount;
