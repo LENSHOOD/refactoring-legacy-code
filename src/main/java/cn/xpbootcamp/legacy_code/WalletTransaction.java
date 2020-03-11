@@ -1,9 +1,7 @@
 package cn.xpbootcamp.legacy_code;
 
 import cn.xpbootcamp.legacy_code.enums.STATUS;
-import cn.xpbootcamp.legacy_code.repository.UserRepositoryImpl;
 import cn.xpbootcamp.legacy_code.service.WalletService;
-import cn.xpbootcamp.legacy_code.service.WalletServiceImpl;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
 import cn.xpbootcamp.legacy_code.utils.IdGenerator;
 import javax.transaction.InvalidTransactionException;
@@ -18,9 +16,10 @@ public class WalletTransaction {
     private STATUS status;
     private String transactionSerialNumber;
     private DistributedLock distributedLock;
+    private WalletService walletService;
 
     public WalletTransaction(Long buyerId, Long sellerId,
-                             double amount, DistributedLock distributedLock) {
+                             double amount, DistributedLock distributedLock, WalletService walletService) {
         this.transactionId = IdGenerator.generateTransactionId();
         this.buyerId = buyerId;
         this.sellerId = sellerId;
@@ -28,6 +27,7 @@ public class WalletTransaction {
         this.status = STATUS.TO_BE_EXECUTED;
         this.createdTimestamp = System.currentTimeMillis();
         this.distributedLock = distributedLock;
+        this.walletService = walletService;
     }
 
     public boolean execute() throws InvalidTransactionException {
@@ -54,7 +54,7 @@ public class WalletTransaction {
                 this.status = STATUS.EXPIRED;
                 return false;
             }
-            WalletService walletService = new WalletServiceImpl(new UserRepositoryImpl());
+
             Optional<String> serialNumber = walletService.moveMoney(buyerId, sellerId, amount);
             if (serialNumber.isPresent()) {
                 this.transactionSerialNumber = serialNumber.get();
