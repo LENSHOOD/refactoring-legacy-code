@@ -12,16 +12,14 @@ public class WalletTransaction {
     private String id;
     private Long buyerId;
     private Long sellerId;
-    private Long productId;
-    private String orderId;
     private Long createdTimestamp;
     private double amount;
     private STATUS status;
     private String walletTransactionId;
     private DistributedLock distributedLock;
 
-    public WalletTransaction(String preAssignedId, Long buyerId,
-                             Long sellerId, Long productId, String orderId, DistributedLock distributedLock) {
+    public WalletTransaction(String preAssignedId, Long buyerId, Long sellerId,
+                             double amount, DistributedLock distributedLock) {
         if (preAssignedId != null && !preAssignedId.isEmpty()) {
             this.id = preAssignedId;
         } else {
@@ -32,8 +30,7 @@ public class WalletTransaction {
         }
         this.buyerId = buyerId;
         this.sellerId = sellerId;
-        this.productId = productId;
-        this.orderId = orderId;
+        this.amount = amount;
         this.status = STATUS.TO_BE_EXECUTED;
         this.createdTimestamp = System.currentTimeMillis();
         this.distributedLock = distributedLock;
@@ -80,4 +77,7 @@ public class WalletTransaction {
         }
     }
 
+    public String getWalletTransactionId() {
+        return walletTransactionId;
+    }
 }
