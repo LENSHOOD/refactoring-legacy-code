@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import cn.xpbootcamp.legacy_code.enums.STATUS;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
 import cn.xpbootcamp.legacy_code.vo.TransactionInfo;
@@ -125,17 +126,21 @@ class WalletTransactionTest {
 
         // then
         assertThat(result).isFalse();
+        assertThat(transaction.getStatus()).isEqualTo(STATUS.EXPIRED);
     }
 
     @Test
     void should_return_false_when_move_money_failed() {
         // given
         when(walletService.moveMoney(buyerId, sellerId, amount)).thenReturn(false);
+        when(lock.lock(String.valueOf(buyerId))).thenReturn(true);
+        when(lock.lock(String.valueOf(sellerId))).thenReturn(true);
 
         // when
         boolean result = walletTransaction.doMoveMoney();
 
         // then
         assertThat(result).isFalse();
+        assertThat(walletTransaction.getStatus()).isEqualTo(STATUS.FAILED);
     }
 }

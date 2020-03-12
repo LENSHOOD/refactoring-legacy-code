@@ -10,14 +10,15 @@ import javax.transaction.InvalidTransactionException;
 public class WalletTransaction {
     private static final int EXPIRED_INTERVAL = 1728000000;
     private TransactionInfo transactionInfo;
+
     private String id;
+
     private STATUS status = STATUS.TO_BE_EXECUTED;
     private Long createdTimestamp;
 
-
     private DistributedLock distributedLock;
-    private WalletService walletService;
 
+    private WalletService walletService;
     public WalletTransaction(TransactionInfo transactionInfo, DistributedLock distributedLock, WalletService walletService)
             throws InvalidTransactionException {
         if (transactionInfo == null) {
@@ -84,5 +85,13 @@ public class WalletTransaction {
         } finally {
             distributedLock.unlock(String.valueOf(transactionInfo.getBuyerId()));
         }
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public STATUS getStatus() {
+        return status;
     }
 }
