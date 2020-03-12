@@ -31,15 +31,19 @@ public class WalletTransaction {
     }
 
     public boolean execute() {
+        if (isExpired()) {
+            this.status = STATUS.EXPIRED;
+            return false;
+        }
+
+        return doMoveMoney();
+    }
+
+    boolean doMoveMoney() {
         if (!tryLock()) {
             return false;
         }
         try {
-            if (isExpired()) {
-                this.status = STATUS.EXPIRED;
-                return false;
-            }
-
             boolean isMoneyMoved = walletService.moveMoney(
                     transactionInfo.getBuyerId(), transactionInfo.getSellerId(), transactionInfo.getAmount());
             if (!isMoneyMoved) {

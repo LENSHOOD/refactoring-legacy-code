@@ -133,7 +133,7 @@ class WalletTransactionTest {
         when(walletService.moveMoney(buyerId, sellerId, amount)).thenReturn(false);
 
         // when
-        boolean result = walletTransaction.execute();
+        boolean result = walletTransaction.doMoveMoney();
 
         // then
         assertThat(result).isFalse();
