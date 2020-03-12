@@ -127,4 +127,15 @@ class WalletTransactionTest {
         assertThat(result).isFalse();
     }
 
+    @Test
+    void should_return_false_when_move_money_failed() {
+        // given
+        when(walletService.moveMoney(buyerId, sellerId, amount)).thenReturn(false);
+
+        // when
+        boolean result = walletTransaction.execute();
+
+        // then
+        assertThat(result).isFalse();
+    }
 }

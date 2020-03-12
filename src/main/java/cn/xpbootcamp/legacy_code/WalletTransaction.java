@@ -3,17 +3,17 @@ package cn.xpbootcamp.legacy_code;
 import cn.xpbootcamp.legacy_code.enums.STATUS;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.DistributedLock;
+import cn.xpbootcamp.legacy_code.utils.IdGenerator;
 import cn.xpbootcamp.legacy_code.vo.TransactionInfo;
 import javax.transaction.InvalidTransactionException;
-import java.util.Optional;
 
 public class WalletTransaction {
     private static final int EXPIRED_INTERVAL = 1728000000;
     private TransactionInfo transactionInfo;
-
+    private String id;
+    private STATUS status = STATUS.TO_BE_EXECUTED;
     private Long createdTimestamp;
-    private STATUS status;
-    private String transactionSerialNumber;
+
 
     private DistributedLock distributedLock;
     private WalletService walletService;
@@ -24,7 +24,7 @@ public class WalletTransaction {
             throw new InvalidTransactionException("This is an invalid transaction");
         }
         this.transactionInfo = transactionInfo;
-        this.status = STATUS.TO_BE_EXECUTED;
+        this.id = IdGenerator.generateTransactionId();
         this.createdTimestamp = System.currentTimeMillis();
         this.distributedLock = distributedLock;
         this.walletService = walletService;
@@ -40,16 +40,15 @@ public class WalletTransaction {
                 return false;
             }
 
-            Optional<String> serialNumber = walletService.moveMoney(
+            boolean isMoneyMoved = walletService.moveMoney(
                     transactionInfo.getBuyerId(), transactionInfo.getSellerId(), transactionInfo.getAmount());
-            if (serialNumber.isPresent()) {
-                this.transactionSerialNumber = serialNumber.get();
-                this.status = STATUS.EXECUTED;
-                return true;
-            } else {
+            if (!isMoneyMoved) {
                 this.status = STATUS.FAILED;
                 return false;
             }
+
+            this.status = STATUS.EXECUTED;
+            return true;
         } finally {
             unlock();
         }
@@ -81,9 +80,5 @@ public class WalletTransaction {
         } finally {
             distributedLock.unlock(String.valueOf(transactionInfo.getBuyerId()));
         }
-    }
-
-    public String getTransactionSerialNumber() {
-        return transactionSerialNumber;
     }
 }

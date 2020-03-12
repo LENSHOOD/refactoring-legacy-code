@@ -9,7 +9,6 @@ import cn.xpbootcamp.legacy_code.entity.User;
 import cn.xpbootcamp.legacy_code.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.Optional;
 
 class WalletServiceImplTest {
     private User buyer;
@@ -24,21 +23,21 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void should_return_empty_when_buyer_cannot_hold_sufficient_money() {
+    void should_return_false_when_buyer_cannot_hold_sufficient_money() {
         // given
         long fakeBuyerId = 1L;
         buyer.setBalance(0);
         when(userRepository.find(eq(fakeBuyerId))).thenReturn(buyer);
 
         // when
-        Optional<String> serialNumber = walletService.moveMoney(fakeBuyerId, 2L, 10);
+        boolean resukt = walletService.moveMoney(fakeBuyerId, 2L, 10);
 
         // then
-        assertThat(serialNumber).isEmpty();
+        assertThat(resukt).isFalse();
     }
 
     @Test
-    void should_return_serial_id_when_buyer_move_10_to_seller() {
+    void should_return_true_when_buyer_move_10_to_seller() {
         // given
         long fakeBuyerId = 1L;
         long fakeSellerId = 2L;
@@ -48,10 +47,10 @@ class WalletServiceImplTest {
         when(userRepository.find(eq(fakeSellerId))).thenReturn(seller);
 
         // when
-        Optional<String> serialNumber = walletService.moveMoney(fakeBuyerId, fakeSellerId, 10);
+        boolean result = walletService.moveMoney(fakeBuyerId, fakeSellerId, 10);
 
         // then
-        assertThat(serialNumber).isNotEmpty();
+        assertThat(result).isTrue();
         assertThat(buyer.getBalance()).isEqualTo(0L);
         assertThat(seller.getBalance()).isEqualTo(10L);
     }
