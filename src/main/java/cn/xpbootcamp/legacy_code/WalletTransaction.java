@@ -1,6 +1,6 @@
 package cn.xpbootcamp.legacy_code;
 
-import cn.xpbootcamp.legacy_code.enums.STATUS;
+import cn.xpbootcamp.legacy_code.enums.Status;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.IdGenerator;
 import cn.xpbootcamp.legacy_code.utils.lock.DoubleLockManager;
@@ -12,7 +12,7 @@ public class WalletTransaction {
 
     private TransactionInfo transactionInfo;
     private String id;
-    private STATUS status = STATUS.TO_BE_EXECUTED;
+    private Status status = Status.TO_BE_EXECUTED;
     private Long createdTimestamp;
 
     private DoubleLockManager.DoubleLock lock;
@@ -32,7 +32,7 @@ public class WalletTransaction {
 
     public boolean execute() {
         if (isExpired()) {
-            this.status = STATUS.EXPIRED;
+            this.status = Status.EXPIRED;
             return false;
         }
 
@@ -47,11 +47,11 @@ public class WalletTransaction {
             boolean isMoneyMoved = walletService.moveMoney(
                     transactionInfo.getBuyerId(), transactionInfo.getSellerId(), transactionInfo.getAmount());
             if (!isMoneyMoved) {
-                this.status = STATUS.FAILED;
+                this.status = Status.FAILED;
                 return false;
             }
 
-            this.status = STATUS.EXECUTED;
+            this.status = Status.EXECUTED;
             return true;
         } finally {
             lock.unlock();
@@ -66,7 +66,7 @@ public class WalletTransaction {
         return id;
     }
 
-    public STATUS getStatus() {
+    public Status getStatus() {
         return status;
     }
 }

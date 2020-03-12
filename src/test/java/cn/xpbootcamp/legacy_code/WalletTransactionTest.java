@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import cn.xpbootcamp.legacy_code.enums.STATUS;
+import cn.xpbootcamp.legacy_code.enums.Status;
 import cn.xpbootcamp.legacy_code.service.WalletService;
 import cn.xpbootcamp.legacy_code.utils.lock.DoubleLockManager;
 import cn.xpbootcamp.legacy_code.vo.TransactionInfo;
@@ -48,7 +48,7 @@ class WalletTransactionTest {
 
         // then
         assertThat(result).isFalse();
-        assertThat(transaction.getStatus()).isEqualTo(STATUS.EXPIRED);
+        assertThat(transaction.getStatus()).isEqualTo(Status.EXPIRED);
     }
 
     @Test
@@ -74,7 +74,7 @@ class WalletTransactionTest {
 
         // then
         assertThat(result).isFalse();
-        assertThat(walletTransaction.getStatus()).isEqualTo(STATUS.FAILED);
+        assertThat(walletTransaction.getStatus()).isEqualTo(Status.FAILED);
     }
 
     @Test
@@ -88,6 +88,6 @@ class WalletTransactionTest {
 
         // then
         assertThat(result).isTrue();
-        assertThat(walletTransaction.getStatus()).isEqualTo(STATUS.EXECUTED);
+        assertThat(walletTransaction.getStatus()).isEqualTo(Status.EXECUTED);
     }
 }
