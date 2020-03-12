@@ -1,4 +1,4 @@
-package cn.xpbootcamp.legacy_code.utils;
+package cn.xpbootcamp.legacy_code.utils.lock;
 
 /**
  * DistributedLock:

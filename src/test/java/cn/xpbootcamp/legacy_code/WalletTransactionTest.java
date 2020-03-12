@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 
 import cn.xpbootcamp.legacy_code.enums.STATUS;
 import cn.xpbootcamp.legacy_code.service.WalletService;
-import cn.xpbootcamp.legacy_code.utils.DistributedLock;
+import cn.xpbootcamp.legacy_code.utils.lock.DistributedLock;
 import cn.xpbootcamp.legacy_code.vo.TransactionInfo;
 import cn.xpbootcamp.legacy_code.vo.exception.InvalidTransactionInfoException;
 import org.junit.jupiter.api.BeforeEach;
