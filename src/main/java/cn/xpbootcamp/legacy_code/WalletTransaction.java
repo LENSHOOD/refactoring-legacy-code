@@ -8,6 +8,7 @@ import javax.transaction.InvalidTransactionException;
 import java.util.Optional;
 
 public class WalletTransaction {
+    private static final int EXPIRED_INTERVAL = 1728000000;
     private TransactionInfo transactionInfo;
 
     private Long createdTimestamp;
@@ -30,21 +31,11 @@ public class WalletTransaction {
     }
 
     public boolean execute() {
-        if (status == STATUS.EXECUTED) {
-            return true;
+        if (!tryLock()) {
+            return false;
         }
-        boolean isLocked = tryLock();
         try {
-            // 锁定未成功，返回false
-            if (!isLocked) {
-                return false;
-            }
-            if (status == STATUS.EXECUTED) {
-                return true; // double check
-            }
-            long executionInvokedTimestamp = System.currentTimeMillis();
-            // 交易超过20天
-            if (executionInvokedTimestamp - createdTimestamp > 1728000000) {
+            if (isExpired()) {
                 this.status = STATUS.EXPIRED;
                 return false;
             }
@@ -60,8 +51,12 @@ public class WalletTransaction {
                 return false;
             }
         } finally {
-            unlock(isLocked);
+            unlock();
         }
+    }
+
+    boolean isExpired() {
+        return System.currentTimeMillis() - createdTimestamp > EXPIRED_INTERVAL;
     }
 
     boolean tryLock() {
@@ -80,11 +75,7 @@ public class WalletTransaction {
         }
     }
 
-    void unlock(boolean isLocked) {
-        if (!isLocked) {
-            return;
-        }
-
+    void unlock() {
         try {
             distributedLock.unlock(String.valueOf(transactionInfo.getSellerId()));
         } finally {

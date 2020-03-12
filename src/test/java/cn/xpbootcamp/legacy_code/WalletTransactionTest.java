@@ -94,7 +94,7 @@ class WalletTransactionTest {
         doNothing().when(lock).unlock(String.valueOf(sellerId));
 
         // when
-        walletTransaction.unlock(true);
+        walletTransaction.unlock();
 
         // then
         verify(lock, times(1)).unlock(String.valueOf(buyerId));
@@ -108,10 +108,23 @@ class WalletTransactionTest {
         doNothing().when(lock).unlock(String.valueOf(buyerId));
 
         // when
-        assertThatThrownBy(() -> walletTransaction.unlock(true)).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> walletTransaction.unlock()).isInstanceOf(RuntimeException.class);
 
         // then
         verify(lock, times(1)).unlock(String.valueOf(buyerId));
+    }
+
+    @Test
+    void should_execute_fail_when_expired() {
+        // given
+        WalletTransaction transaction = spy(walletTransaction);
+        when(transaction.isExpired()).thenReturn(true);
+
+        // when
+        boolean result = transaction.execute();
+
+        // then
+        assertThat(result).isFalse();
     }
 
 }
